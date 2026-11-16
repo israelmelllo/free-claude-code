@@ -1652,6 +1652,8 @@ install_free_claude_code() {
 
     set -- uv tool install --force --refresh-package free-claude-code
     if [ "$(uname -s)" = "Darwin" ]; then
+        # Fetch the managed interpreter first so the "+gil" request below finds it.
+        run env -u UV_PYTHON_PREFERENCE uv python install --managed-python "$PYTHON_VERSION"
         set -- env -u UV_PYTHON_PREFERENCE "$@" --managed-python --python "$PYTHON_VERSION+gil"
     else
         set -- "$@" --python "$PYTHON_VERSION"
@@ -1961,6 +1963,10 @@ if [ "$dry_run" -eq 0 ]; then
     if [ "$install_opencode" -eq 1 ]; then check_opencode_install; fi
     if [ "$enable_rtk_headroom" -eq 1 ] && ! command -v rtk >/dev/null 2>&1; then select_rtk_release; fi
 fi
+
+# Trust the OS certificate store (corporate TLS-inspecting proxies) unless the user chose a value.
+: "${UV_SYSTEM_CERTS:=1}"
+export UV_SYSTEM_CERTS
 
 start_install_step uv "Ensuring uv $MIN_UV_VERSION or newer is installed"
 ensure_uv
